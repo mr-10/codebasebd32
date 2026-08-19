@@ -1,76 +1,57 @@
-# Next.js / Vercel Build Error Fix: Parallel Pages Resolving to the Same Path
+# Next.js / Vercel Build Error Fix & Setup Guide
 
-## Error Summary
+## 1. Why Vercel Deployment Failed
 
-During deployment on Vercel or local build (`npm run build`), Next.js / Turbopack produces the following error:
+Your Vercel build failed with the error:
+`Error: You cannot have two parallel pages that resolve to the same path. Please check /(auth)/login and /login.`
 
-```text
-Error: Turbopack build failed with 1 error:
-./app/login
-Error: You cannot have two parallel pages that resolve to the same path. Please check /(auth)...
-```
-
----
-
-## Root Cause Analysis
-
-In the Next.js **App Router**, folder names enclosed in parentheses (e.g., `(auth)`, `(main)`, `(dashboard)`) are **Route Groups**. Route groups allow you to organize files and layouts without affecting the URL path structure.
-
-Because route groups do not add a prefix to the URL, any `page.tsx` (or `.jsx`, `.js`, `.ts`) inside a route group resolves directly to the relative subfolder path.
-
-The error occurs when you have **two or more `page` files that resolve to the exact same URL path**.
-
-For example, both of the following files map to `/login`:
-1. `app/login/page.tsx` $\rightarrow$ resolves to `/login`
-2. `app/(auth)/login/page.tsx` $\rightarrow$ resolves to `/login`
-
-Because Next.js cannot determine which page component to serve at `/login`, the build fails.
+This happens in Next.js App Router when two pages map to the same route URL (`/login`):
+- `app/login/page.tsx`
+- `app/(auth)/login/page.tsx`
 
 ---
 
-## How to Fix
+## 2. Why Code Base is Empty on GitHub
 
-### Step 1: Locate Duplicate Login Pages
-Check your `app` directory for multiple `login` page definitions:
-- Check root level: `app/login/page.tsx`
-- Check route groups:
-  - `app/(auth)/login/page.tsx`
-  - `app/(main)/login/page.tsx`
-  - `app/(public)/login/page.tsx`
+This repository (`mr-10/codebasebd32`) was created on GitHub as an empty repository, and your local project files have not yet been pushed to it from your local machine/computer.
 
 ---
 
-### Step 2: Choose One of the Following Solutions
+## 3. Step-by-Step Instructions to Push Code & Fix Vercel Deployment
 
-#### Solution A: Delete the Duplicate File (Recommended)
-If you intended to move `login` into the `(auth)` group, delete the old `app/login` directory:
+Run the following commands in the terminal **on your local computer/device** where your Next.js project code is located:
 
+### Step A: Open your project directory
 ```bash
-# Keep app/(auth)/login/page.tsx and delete app/login:
-rm -rf app/login
+cd /path/to/your/nextjs-project
 ```
 
-Or if you prefer keeping `app/login/page.tsx`, delete the `(auth)/login` route:
+### Step B: Fix the Vercel route conflict
+Delete one of the duplicate login route folders:
 
+* **Option 1 (Recommended):** Keep `app/(auth)/login` and delete `app/login`:
+  ```bash
+  rm -rf app/login
+  ```
+* **Option 2:** Keep `app/login` and delete `app/(auth)/login`:
+  ```bash
+  rm -rf "app/(auth)/login"
+  ```
+
+### Step C: Push your code to GitHub
 ```bash
-rm -rf "app/(auth)/login"
+git init
+git remote add origin https://github.com/mr-10/codebasebd32.git
+git branch -M main
+git add .
+git commit -m "Fix duplicate /login route collision and add project codebase"
+git push -u origin main --force
 ```
 
 ---
 
-#### Solution B: Move/Rename One of the Routes
-If both pages serve different purposes, rename one of them to have a unique URL path (e.g., `/admin-login` or `/signin`):
+## 4. Result
 
-- `app/(auth)/login/page.tsx` $\rightarrow$ `/login`
-- `app/(auth)/admin-login/page.tsx` $\rightarrow$ `/admin-login`
-
----
-
-### Step 3: Verify the Fix Locally
-Run the build command locally before re-deploying to Vercel:
-
-```bash
-npm run build
-```
-
-If the build succeeds without route conflict errors, commit and push your changes to trigger a new Vercel deployment.
+Once you push your code:
+1. All your project code will be visible on GitHub.
+2. Vercel will automatically detect the push and trigger a new deployment without the route collision error.
